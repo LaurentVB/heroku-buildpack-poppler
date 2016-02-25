@@ -1,0 +1,52 @@
+#!/bin/bash
+
+indent() {
+  sed -u 's/^/       /'
+}
+
+echo "-----> Installing Fontconfig"
+FONTCONFIG_VERSION="2.11.1"
+FONTCONFIG_FILE_NAME="fontconfig-${FONTCONFIG_VERSION}.tar.gz"
+mkdir -p $CACHE_DIR
+if ! [ -e $CACHE_DIR/$FILE_NAME ]; then
+  echo "building Fontconfig buildpack binaries" | indent
+  cd $CACHE_DIR
+  curl https://www.freedesktop.org/software/fontconfig/release/$FONTCONFIG_FILE_NAME > $CACHE_DIR/$FILE_NAME
+  tar -zxf $FONTCONFIG_FILE_NAME
+  cd "fontconfig-${FONTCONFIG_VERSION}"
+  ./configure
+  make
+fi
+
+echo "extracting Fontconfig binaries" | indent
+mkdir -p $BUILD_DIR/vendor/fontconfig
+echo "cp -rf \"${CACHE_DIR}/fontconfig-${FONTCONFIG_VERSION}/*\" $BUILD_DIR/vendor/fontconfig"
+      cp -rf  "${CACHE_DIR}/fontconfig-${FONTCONFIG_VERSION}/" $BUILD_DIR/vendor/fontconfig
+
+
+echo "-----> Installing Poppler"
+POPPLER_VERSION="0.41.0"
+POPPLER_FILE_NAME="poppler-${POPPLER_VERSION}.tar.xz"
+
+mkdir -p $CACHE_DIR
+if ! [ -e $CACHE_DIR/$FILE_NAME ]; then
+  echo "building Poppler buildpack binaries" | indent
+  cd $CACHE_DIR
+  curl http://poppler.freedesktop.org/$FILE_NAME > $CACHE_DIR/$FILE_NAME
+  tar -xzf $FILE_NAME
+  cd "poppler-${VERSION}"
+  DISABLED="--disable-abiword-output --disable-gtk-test --disable-poppler-qt --disable-poppler-qt4 --disable-splash-output --disable-gdk"
+  FONTCONFIG_LIBS="-L/${BUILD_DIR}/vendor/fontconfig/fontconfig-${FONTCONFIG_VERSION}/src/.libs/ -lfontconfig"
+  FONTCONFIG_CFLAGS="-I/${BUILD_DIR}/vendor/fontconfig/fontconfig-${FONTCONFIG_VERSION}/"
+  ./configure --enable-static=yes --enable-shared=no $DISABLE
+  make
+fi
+
+echo "Extracting Poppler binaries" | indent
+mkdir -p $BUILD_DIR/vendor/poppler
+cp -rf $CACHE_DIR/poppler-$VERSION $BUILD_DIR/vendor/poppler
+
+echo "Linking binaries" | indent
+mkdir -p $BUILD_DIR/bin
+cd $BUILD_DIR/bin
+ln -s ../vendor/poppler/poppler-$VERSION/utils/pdftotext .
