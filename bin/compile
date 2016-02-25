@@ -1,17 +1,23 @@
 #!/bin/bash
 
+set -e
+
+BUILD_DIR=$1
+CACHE_DIR=$2
+
 indent() {
   sed -u 's/^/       /'
 }
 
-echo "-----> Installing Fontconfig"
 FONTCONFIG_VERSION="2.11.1"
 FONTCONFIG_FILE_NAME="fontconfig-${FONTCONFIG_VERSION}.tar.gz"
+echo "-----> Installing Fontconfig ${FONTCONFIG_VERSION}"
+
 mkdir -p $CACHE_DIR
-if ! [ -e $CACHE_DIR/$FILE_NAME ]; then
+if ! [ -e $CACHE_DIR/$FONTCONFIG_FILE_NAME ]; then
   echo "building Fontconfig buildpack binaries" | indent
   cd $CACHE_DIR
-  curl https://www.freedesktop.org/software/fontconfig/release/$FONTCONFIG_FILE_NAME > $CACHE_DIR/$FILE_NAME
+  curl https://www.freedesktop.org/software/fontconfig/release/$FONTCONFIG_FILE_NAME > $CACHE_DIR/$FONTCONFIG_FILE_NAME
   tar -zxf $FONTCONFIG_FILE_NAME
   cd "fontconfig-${FONTCONFIG_VERSION}"
   ./configure
@@ -20,21 +26,23 @@ fi
 
 echo "extracting Fontconfig binaries" | indent
 mkdir -p $BUILD_DIR/vendor/fontconfig
-echo "cp -rf \"${CACHE_DIR}/fontconfig-${FONTCONFIG_VERSION}/*\" $BUILD_DIR/vendor/fontconfig"
-      cp -rf  "${CACHE_DIR}/fontconfig-${FONTCONFIG_VERSION}/" $BUILD_DIR/vendor/fontconfig
+echo "cp -rf \"${CACHE_DIR}/fontconfig-${FONTCONFIG_VERSION}/\" $BUILD_DIR/vendor/fontconfig"
+cp -rf "${CACHE_DIR}/fontconfig-${FONTCONFIG_VERSION}/" $BUILD_DIR/vendor/fontconfig
 
-
-echo "-----> Installing Poppler"
 POPPLER_VERSION="0.41.0"
 POPPLER_FILE_NAME="poppler-${POPPLER_VERSION}.tar.xz"
+echo "-----> Installing Poppler ${POPPLER_VERSION}"
 
 mkdir -p $CACHE_DIR
-if ! [ -e $CACHE_DIR/$FILE_NAME ]; then
+if ! [ -e $CACHE_DIR/$POPPLER_FILE_NAME ]; then
   echo "building Poppler buildpack binaries" | indent
   cd $CACHE_DIR
-  curl http://poppler.freedesktop.org/$FILE_NAME > $CACHE_DIR/$FILE_NAME
-  tar -xzf $FILE_NAME
-  cd "poppler-${VERSION}"
+  echo "downloading..." | indent
+  curl http://poppler.freedesktop.org/$POPPLER_FILE_NAME > $CACHE_DIR/$POPPLER_FILE_NAME
+  echo "extracting..." | indent
+  unxz -d $POPPLER_FILE_NAME
+  tar -xf "poppler-${POPPLER_VERSION}.tar"
+  cd "poppler-${POPPLER_VERSION}"
   DISABLED="--disable-abiword-output --disable-gtk-test --disable-poppler-qt --disable-poppler-qt4 --disable-splash-output --disable-gdk"
   FONTCONFIG_LIBS="-L/${BUILD_DIR}/vendor/fontconfig/fontconfig-${FONTCONFIG_VERSION}/src/.libs/ -lfontconfig"
   FONTCONFIG_CFLAGS="-I/${BUILD_DIR}/vendor/fontconfig/fontconfig-${FONTCONFIG_VERSION}/"
@@ -44,9 +52,9 @@ fi
 
 echo "Extracting Poppler binaries" | indent
 mkdir -p $BUILD_DIR/vendor/poppler
-cp -rf $CACHE_DIR/poppler-$VERSION $BUILD_DIR/vendor/poppler
+cp -rf $CACHE_DIR/poppler-$POPPLER_VERSION $BUILD_DIR/vendor/poppler
 
 echo "Linking binaries" | indent
 mkdir -p $BUILD_DIR/bin
 cd $BUILD_DIR/bin
-ln -s ../vendor/poppler/poppler-$VERSION/utils/pdftotext .
+ln -s ../vendor/poppler/poppler-$POPPLER_VERSION/utils/pdftotext .
