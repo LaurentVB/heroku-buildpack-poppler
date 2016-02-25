@@ -17,7 +17,8 @@ mkdir -p $CACHE_DIR
 if ! [ -e $CACHE_DIR/$FONTCONFIG_FILE_NAME ]; then
   echo "building Fontconfig buildpack binaries" | indent
   cd $CACHE_DIR
-  curl https://www.freedesktop.org/software/fontconfig/release/$FONTCONFIG_FILE_NAME > $CACHE_DIR/$FONTCONFIG_FILE_NAME
+  echo "wget https://www.freedesktop.org/software/fontconfig/release/\"$FONTCONFIG_FILE_NAME\""
+  wget https://www.freedesktop.org/software/fontconfig/release/$FONTCONFIG_FILE_NAME
   tar -zxf $FONTCONFIG_FILE_NAME
   cd "fontconfig-${FONTCONFIG_VERSION}"
   ./configure
@@ -26,8 +27,8 @@ fi
 
 echo "extracting Fontconfig binaries" | indent
 mkdir -p $BUILD_DIR/vendor/fontconfig
-echo "cp -rf \"${CACHE_DIR}/fontconfig-${FONTCONFIG_VERSION}/\" $BUILD_DIR/vendor/fontconfig"
-cp -rf "${CACHE_DIR}/fontconfig-${FONTCONFIG_VERSION}/" $BUILD_DIR/vendor/fontconfig
+echo "cp -rf \"${CACHE_DIR}/fontconfig-${FONTCONFIG_VERSION}\" $BUILD_DIR/vendor/fontconfig"
+cp -rf "${CACHE_DIR}/fontconfig-${FONTCONFIG_VERSION}" $BUILD_DIR/vendor/fontconfig
 
 POPPLER_VERSION="0.41.0"
 POPPLER_FILE_NAME="poppler-${POPPLER_VERSION}.tar.xz"
@@ -37,11 +38,15 @@ mkdir -p $CACHE_DIR
 if ! [ -e $CACHE_DIR/$POPPLER_FILE_NAME ]; then
   echo "building Poppler buildpack binaries" | indent
   cd $CACHE_DIR
-  echo "downloading..." | indent
-  curl http://poppler.freedesktop.org/$POPPLER_FILE_NAME > $CACHE_DIR/$POPPLER_FILE_NAME
+
+  echo "-----> downloading..."
+  echo "curl http://poppler.freedesktop.org/\"$POPPLER_FILE_NAME\""
+  wget http://poppler.freedesktop.org/$POPPLER_FILE_NAME
+
   echo "extracting..." | indent
-  unxz -d $POPPLER_FILE_NAME
-  tar -xf "poppler-${POPPLER_VERSION}.tar"
+  echo "tar -xJf \"POPPLER_FILE_NAME\""
+  tar -xJf $POPPLER_FILE_NAME
+
   cd "poppler-${POPPLER_VERSION}"
   DISABLED="--disable-abiword-output --disable-gtk-test --disable-poppler-qt --disable-poppler-qt4 --disable-splash-output --disable-gdk"
   FONTCONFIG_LIBS="-L/${BUILD_DIR}/vendor/fontconfig/fontconfig-${FONTCONFIG_VERSION}/src/.libs/ -lfontconfig"
